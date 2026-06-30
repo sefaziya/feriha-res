@@ -142,19 +142,30 @@ run_monitor_app <- function(proj_root, monitor_cfg = NULL, config = NULL) {
       title = "RES Monitor — Giris",
       shiny::textInput("auth_user", "Kullanici adi", placeholder = monitor_cfg$auth$username %||% "res"),
       shiny::passwordInput("auth_pw", "Sifre"),
-      footer = shiny::actionButton("auth_btn", "Giris", class = "btn-primary"),
+      footer = shiny::tagList(
+        shiny::actionButton("auth_btn", "Giris", class = "btn-primary"),
+        shiny::tags$script(shiny::HTML("
+          $(document).on('keydown', '#auth_pw, #auth_user', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); $('#auth_btn').click(); }
+          });
+        "))
+      ),
       easyClose = FALSE
     ))
     shiny::observeEvent(input$auth_btn, {
-      user_ok <- identical(input$auth_user, monitor_cfg$auth$username %||% "")
-      pass_ok <- identical(input$auth_pw, monitor_cfg$auth$password %||% "")
+      user_in <- trimws(input$auth_user %||% "")
+      pass_in <- input$auth_pw %||% ""
+      user_exp <- trimws(monitor_cfg$auth$username %||% "")
+      pass_exp <- as.character(monitor_cfg$auth$password %||% "")
+      user_ok <- identical(tolower(user_in), tolower(user_exp))
+      pass_ok <- identical(pass_in, pass_exp)
       if (user_ok && pass_ok) {
         auth_ok(TRUE)
         shiny::removeModal()
       } else {
         shiny::showNotification("Hatali kullanici adi veya sifre", type = "error")
       }
-    })
+    }, ignoreInit = TRUE)
   }
 
     shiny::observe({
