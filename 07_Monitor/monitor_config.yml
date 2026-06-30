@@ -1,0 +1,10 @@
+# RES Monitor — web dashboard ayarlari
+host: "127.0.0.1"       # dis erisim icin 0.0.0.0 + firewall; onerilen: SSH tuneli
+port: 8788
+refresh_seconds: 5
+tmux_session: "RES"
+monitor_tmux_session: "RES_MONITOR"
+
+auth:
+  enabled: false
+  password: ""          # enabled: true ise zorunlu

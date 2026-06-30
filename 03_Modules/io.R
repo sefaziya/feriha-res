@@ -57,3 +57,11 @@ discover_numeric_columns <- function(df, config) {
 }
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
+
+project_root <- function() {
+  root <- getOption("res.project_root")
+  if (is.null(root) || !nzchar(root)) {
+    return(normalizePath(getwd()))
+  }
+  root
+}

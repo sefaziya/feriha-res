@@ -46,6 +46,26 @@ build_field_summary <- function(field, results, start_time, config) {
   )
 }
 
+write_execution_manifest <- function(academic_fields, plan, config, run_date) {
+  if (!requireNamespace("jsonlite", quietly = TRUE)) return(invisible(NULL))
+  base <- file.path(project_root(), config$output$base_dir %||% "05_Output")
+  meta_dir <- file.path(base, "_meta", run_date)
+  dir.create(meta_dir, recursive = TRUE, showWarnings = FALSE)
+  manifest <- list(
+    run_date = run_date,
+    updated_at = as.character(Sys.time()),
+    academic_fields = academic_fields,
+    pending_at_start = plan
+  )
+  jsonlite::write_json(
+    manifest,
+    file.path(meta_dir, "execution_manifest.json"),
+    pretty = TRUE,
+    auto_unbox = TRUE
+  )
+  invisible(manifest)
+}
+
 build_global_summary <- function(config, run_date = NULL) {
   if (is.null(run_date)) run_date <- format(Sys.Date(), "%Y%m%d")
   base <- file.path(project_root(), config$output$base_dir %||% "05_Output")

@@ -18,6 +18,7 @@ plan <- build_execution_plan(fields$academic_fields, config, run_date)
 
 log_info("Discovered academic fields: ", length(fields$academic_fields))
 log_info("Pending execution plan: ", length(plan))
+write_execution_manifest(fields$academic_fields, plan, config, run_date)
 
 run_execution_plan(df, plan, config, run_date)
 build_global_summary(config, run_date)

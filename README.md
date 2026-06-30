@@ -32,6 +32,22 @@ chmod +x run_res.sh
 tmux attach -t RES
 ```
 
+## Monitor (web arayuzu)
+
+Engine ilerlemesini izlemek ve tmux uzerinden yeniden baslatmak icin Shiny dashboard:
+
+```bash
+chmod +x run_monitor.sh
+./run_monitor.sh
+# Yerel tarayici (SSH tuneli ile):
+ssh -L 8788:127.0.0.1:8788 root@SUNUCU_IP
+# http://127.0.0.1:8788
+```
+
+Ayarlar: `07_Monitor/monitor_config.yml` (port, host, yenileme suresi, istege bagli sifre).
+
+Varsayilan `host: 127.0.0.1` — RStudio Server ile cakismaz; dis erisim icin SSH tuneli onerilir.
+
 ## Config
 
 Edit `01_Config/config.yml` for execution mode, filters, and analysis parameters. No hardcoded academic fields — discovery is automatic from Excel data.
