@@ -27,3 +27,6 @@ renv/staging/
 # Buyuk / gecici
 *.rds
 !renv/**/*.rds
+
+# Monitor sifreleri (sunucuya ozel)
+07_Monitor/monitor_config.local.yml

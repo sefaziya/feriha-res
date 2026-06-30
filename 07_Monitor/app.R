@@ -139,17 +139,20 @@ run_monitor_app <- function(proj_root, monitor_cfg = NULL, config = NULL) {
 
   if (isTRUE(monitor_cfg$auth$enabled)) {
     shiny::showModal(shiny::modalDialog(
-      title = "RES Monitor",
+      title = "RES Monitor — Giris",
+      shiny::textInput("auth_user", "Kullanici adi", placeholder = monitor_cfg$auth$username %||% "res"),
       shiny::passwordInput("auth_pw", "Sifre"),
       footer = shiny::actionButton("auth_btn", "Giris", class = "btn-primary"),
       easyClose = FALSE
     ))
     shiny::observeEvent(input$auth_btn, {
-      if (identical(input$auth_pw, monitor_cfg$auth$password %||% "")) {
+      user_ok <- identical(input$auth_user, monitor_cfg$auth$username %||% "")
+      pass_ok <- identical(input$auth_pw, monitor_cfg$auth$password %||% "")
+      if (user_ok && pass_ok) {
         auth_ok(TRUE)
         shiny::removeModal()
       } else {
-        shiny::showNotification("Hatali sifre", type = "error")
+        shiny::showNotification("Hatali kullanici adi veya sifre", type = "error")
       }
     })
   }
@@ -273,7 +276,20 @@ run_monitor_app <- function(proj_root, monitor_cfg = NULL, config = NULL) {
     output$access_hint <- shiny::renderText({
       host <- monitor_cfg$host %||% "127.0.0.1"
       port <- monitor_cfg$port %||% 8788
-      sprintf("http://%s:%s\nSSH tuneli:\nssh -L %s:127.0.0.1:%s root@SUNUCU", host, port, port, port)
+      auth_on <- isTRUE(monitor_cfg$auth$enabled)
+      if (host == "0.0.0.0") {
+        sprintf(
+          "Mobil/uzak: http://SUNUCU_IP:%d\nKullanici: %s\nAuth: %s",
+          port,
+          monitor_cfg$auth$username %||% "res",
+          if (auth_on) "acik" else "kapali (acmayin!)"
+        )
+      } else {
+        sprintf(
+          "http://127.0.0.1:%d\nSSH tuneli:\nssh -L %d:127.0.0.1:%d root@SUNUCU",
+          port, port, port
+        )
+      }
     })
 
     shiny::observeEvent(input$start_engine, {

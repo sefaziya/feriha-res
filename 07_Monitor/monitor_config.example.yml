@@ -1,0 +1,13 @@
+# Uzak erisim ornegi — bu dosyayi monitor_config.local.yml olarak kopyalayin
+# (monitor_config.local.yml git'e eklenmez)
+
+host: "0.0.0.0"         # tum arayuzlerden dinle (mobil, farkli cihaz)
+port: 8788
+
+auth:
+  enabled: true
+  username: "res"
+  password: "GUVENLI_SIFRE_BURAYA"
+
+# Alternatif: ortam degiskenleri
+#   RES_MONITOR_USER=res RES_MONITOR_PASSWORD=... ./run_monitor.sh

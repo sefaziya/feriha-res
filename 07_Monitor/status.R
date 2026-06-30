@@ -19,7 +19,41 @@ load_monitor_config <- function(path = NULL) {
   if (!requireNamespace("yaml", quietly = TRUE)) {
     stop("Package 'yaml' is required.")
   }
-  yaml::read_yaml(path)
+
+  merge_cfg <- function(base, overlay) {
+    if (is.null(overlay)) return(base)
+    for (nm in names(overlay)) {
+      if (is.list(overlay[[nm]]) && is.list(base[[nm]])) {
+        base[[nm]] <- merge_cfg(base[[nm]], overlay[[nm]])
+      } else {
+        base[[nm]] <- overlay[[nm]]
+      }
+    }
+    base
+  }
+
+  cfg <- yaml::read_yaml(path)
+  local_path <- file.path(dirname(path), "monitor_config.local.yml")
+  if (file.exists(local_path)) {
+    cfg <- merge_cfg(cfg, yaml::read_yaml(local_path))
+  }
+
+  if (nzchar(Sys.getenv("RES_MONITOR_HOST", unset = ""))) {
+    cfg$host <- Sys.getenv("RES_MONITOR_HOST")
+  }
+  if (nzchar(Sys.getenv("RES_MONITOR_PORT", unset = ""))) {
+    cfg$port <- as.integer(Sys.getenv("RES_MONITOR_PORT"))
+  }
+  if (nzchar(Sys.getenv("RES_MONITOR_USER", unset = ""))) {
+    if (is.null(cfg$auth)) cfg$auth <- list()
+    cfg$auth$username <- Sys.getenv("RES_MONITOR_USER")
+  }
+  if (nzchar(Sys.getenv("RES_MONITOR_PASSWORD", unset = ""))) {
+    if (is.null(cfg$auth)) cfg$auth <- list()
+    cfg$auth$password <- Sys.getenv("RES_MONITOR_PASSWORD")
+  }
+
+  cfg
 }
 
 output_base_dir <- function(config) {

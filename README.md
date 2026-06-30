@@ -58,9 +58,27 @@ ssh -L 8788:127.0.0.1:8788 root@SUNUCU_IP
 # http://127.0.0.1:8788
 ```
 
-Ayarlar: `07_Monitor/monitor_config.yml` (port, host, yenileme suresi, istege bagli sifre).
+Ayarlar: `07_Monitor/monitor_config.yml` + sunucuda `monitor_config.local.yml` (sifreler git'e gitmez).
 
-Varsayilan `host: 127.0.0.1` — RStudio Server ile cakismaz; dis erisim icin SSH tuneli onerilir.
+Varsayilan `host: 127.0.0.1` — RStudio Server ile cakismaz.
+
+### Uzak erisim (mobil / farkli cihaz, SSH olmadan)
+
+Sunucuda `07_Monitor/monitor_config.local.yml` olusturun (`monitor_config.example.yml` ornegi):
+
+```yaml
+host: "0.0.0.0"
+auth:
+  enabled: true
+  username: "res"
+  password: "guclu-sifre"
+```
+
+Firewall: `ufw allow 8788/tcp` — ardından `./run_monitor.sh` yeniden baslatin.
+
+Tarayicida: `http://116.203.112.26:8788` — kullanici adi + sifre ile giris (RStudio mantigi).
+
+Not: HTTP uzerinden sifre gider; uzun vadede HTTPS (nginx + Let's Encrypt) onerilir. RStudio portu 8787, monitor 8788 — ayri servisler.
 
 ## Config
 

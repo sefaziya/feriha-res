@@ -1,10 +1,11 @@
 # RES Monitor — web dashboard ayarlari
-host: "127.0.0.1"       # dis erisim icin 0.0.0.0 + firewall; onerilen: SSH tuneli
-port: 8788
+host: "127.0.0.1"       # dis erisim: monitor_config.local.yml ile host: "0.0.0.0"
+port: 8788              # RStudio Server (8787) ile cakismaz
 refresh_seconds: 3
 tmux_session: "RES"
 monitor_tmux_session: "RES_MONITOR"
 
 auth:
   enabled: false
-  password: ""          # enabled: true ise zorunlu
+  username: "res"       # RStudio benzeri giris
+  password: ""          # monitor_config.local.yml veya RES_MONITOR_PASSWORD
