@@ -7,6 +7,9 @@ run_xgboost <- function(df, grouping_var, reduced_vars, config) {
   if (!requireNamespace("dplyr", quietly = TRUE)) {
     stop("Package 'dplyr' is required.")
   }
+  if (!requireNamespace("xgboost", quietly = TRUE)) {
+    stop("Package 'xgboost' is required.")
+  }
 
   set.seed(config$analysis$seed %||% 123)
   xgb_cfg <- config$analysis$xgboost %||% list()

@@ -1,0 +1,25 @@
+Package: feriha-res
+Type: Project
+Version: 0.1.0
+Description: Research Execution System — Turkish academic production analysis.
+Depends: R (>= 4.6.0)
+Imports:
+    dplyr,
+    fmsb,
+    future,
+    furrr,
+    ggplot2,
+    ggrepel,
+    ggridges,
+    htmlwidgets,
+    igraph,
+    jsonlite,
+    plotly,
+    readxl,
+    reshape2,
+    shiny,
+    tidymodels,
+    vegan,
+    vip,
+    xgboost,
+    yaml

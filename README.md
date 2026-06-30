@@ -17,10 +17,24 @@ Modular, config-driven, checkpointed multivariate analysis framework for Turkish
 
 ## Quick Start
 
+### Ilk kurulum (sunucu / yeni makine)
+
+```bash
+git clone git@github.com:sefaziya/feriha-res.git
+cd feriha-res
+chmod +x setup.sh run_res.sh run_monitor.sh
+./setup.sh
+```
+
+`setup.sh` sistem bagimliliklerini (cmake, libglpk-dev, pandoc) ve tum R paketlerini `renv::restore()` ile kurar.
+`DESCRIPTION` dosyasindaki acik bagimliliklar (`xgboost`, `shiny` vb.) lockfile'a dahildir.
+
+### Calistirma
+
 ```bash
 cd /Users/ziya/Downloads/feriha-res
 Rscript 02_Core/run_engine.R
-Rscript 04_Execution/run_viz.R
+Rscript 04_Execution/run_viz_cli.R
 Rscript 06_Meta/run_meta.R
 ```
 
