@@ -1,0 +1,74 @@
+---
+title: "RES Field Report"
+format:
+  html:
+    toc: true
+    embed-resources: true
+  pdf:
+    toc: true
+params:
+  field: "Sosyal-Beşeri ve İdari Bilimler Temel Alanı"
+  output_dir: "05_Output"
+  run_date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+if (nzchar(params$run_date)) {
+  run_date <- params$run_date
+} else {
+  run_date <- format(Sys.Date(), "%Y%m%d")
+}
+field_safe <- gsub("[^A-Za-z0-9._-]+", "_", params$field)
+report_dir <- file.path(params$output_dir, field_safe, run_date)
+summary_path <- file.path(report_dir, "Metadata", "summary.json")
+plots_dir <- file.path(report_dir, "Plots")
+```
+
+# Field: `r params$field`
+
+```{r summary}
+if (file.exists(summary_path)) {
+  summary <- jsonlite::read_json(summary_path, simplifyVector = TRUE)
+  knitr::kable(data.frame(
+    Metric = c("N", "Research fields", "PERMANOVA R2", "PERMANOVA P", "PERMDISP P", "NMDS Stress", "Runtime"),
+    Value = c(summary$N, summary$research_fields_count, summary$PERMANOVA_R2, summary$PERMANOVA_P, summary$PERMDISP_P, summary$Stress, summary$Runtime)
+  ))
+}
+```
+
+## NMDS
+
+```{r nmds-plot, fig.cap="NMDS ordination"}
+nmds_plot <- file.path(plots_dir, "nmds.png")
+if (file.exists(nmds_plot)) knitr::include_graphics(nmds_plot)
+```
+
+## Envfit Vectors
+
+```{r envfit-plot, fig.cap="ENVFIT vectors"}
+envfit_plot <- file.path(plots_dir, "envfit_vectors.png")
+if (file.exists(envfit_plot)) knitr::include_graphics(envfit_plot)
+```
+
+## Profile Heatmap
+
+```{r heatmap-plot, fig.cap="Profile heatmap"}
+heatmap_plot <- file.path(plots_dir, "profile_heatmap.png")
+if (file.exists(heatmap_plot)) knitr::include_graphics(heatmap_plot)
+```
+
+## Tables
+
+```{r tables}
+perm_path <- file.path(report_dir, "Tables", "permanova.csv")
+imp_path <- file.path(report_dir, "Tables", "importance.csv")
+if (file.exists(perm_path)) {
+  cat("### PERMANOVA\n")
+  print(knitr::kable(read.csv(perm_path)))
+}
+if (file.exists(imp_path)) {
+  cat("### Variable Importance\n")
+  print(knitr::kable(read.csv(imp_path)))
+}
+```

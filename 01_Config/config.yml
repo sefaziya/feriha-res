@@ -1,0 +1,78 @@
+fields:
+  auto_discover: true
+  grouping_variable: "research_field"
+  min_n: 30
+
+execution:
+  mode: "sequential"
+
+parallel:
+  enabled: false
+  workers: 4
+
+data:
+  data_dir: "00_Data"
+  required_columns:
+    - academic_field
+    - research_field
+    - title
+  num_vars:
+    - articles
+    - books
+    - papers
+    - memberships
+    - courses
+    - non_university_experience
+    - projects
+    - theses
+    - patents
+    - awards
+    - artistic_activities
+    - administrative_tasks
+  drop_vars:
+    - awards
+    - artistic_activities
+    - non_university_experience
+    - memberships
+    - patents
+  title_filter:
+    - "PROFESÖR"
+    - "DOÇENT"
+    - "DOKTOR ÖĞRETİM ÜYESİ"
+  min_row_sum: 1
+
+preprocess:
+  winsorize_prob: 0.99
+  log_transform: true
+
+analysis:
+  distance: "bray"
+  nmds_k: 3
+  trymax: 30
+  permutations: 999
+  seed: 123
+  envfit_p_threshold: 0.05
+  envfit_vector_mult: 0.8
+  xgboost:
+    trees: 100
+    tree_depth: 4
+    learn_rate: 0.1
+    importance: "impurity"
+    mode: "classification"
+
+visualization:
+  color_palette: "dynamic"
+  nmds_alpha: 0.4
+  legend_position: "bottom"
+
+logging:
+  level: "INFO"
+  aggregate_log_enabled: true
+  aggregate_log: "engine_run.log"
+  # Ayrica her calistirma icin ayri dosyalar:
+  #   05_Output/_logs/engine_{YYYYMMDD_HHMMSS}.log
+  #   05_Output/{field}/{date}/Logs/{field}_{YYYYMMDD_HHMMSS}.log
+
+output:
+  base_dir: "05_Output"
+  include_session_info: true

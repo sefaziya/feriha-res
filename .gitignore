@@ -1,0 +1,29 @@
+# R / renv
+renv/library/
+renv/local/
+renv/cellar/
+renv/python/
+renv/staging/
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Veri ve ciktilar (sunucuya ayri kopyalanir)
+00_Data/*.xlsx
+00_Data/*.xls
+05_Output/
+
+# OS / IDE
+.DS_Store
+.cursor/
+*.swp
+*~
+
+# Quarto / report gecici
+**/.quarto/
+**/site_libs/
+
+# Buyuk / gecici
+*.rds
+!renv/**/*.rds
