@@ -129,18 +129,24 @@ get_engine_process_info <- function() {
     if (!grepl("run_engine\\.R", cmd)) next
     if (!grepl("(/R |Rscript|/exec/R)", cmd)) next
 
-    stats <- tryCatch(
-      system2("ps", c("-p", pid, "-o", "etime=,%cpu=,%mem="), stdout = TRUE, stderr = FALSE),
-      error = function(e) character()
-    )
-    stats <- trimws(paste(stats, collapse = " "))
-    parts <- strsplit(stats, ",", fixed = TRUE)[[1]]
+    elapsed <- trimws(paste(tryCatch(
+      system2("ps", c("-p", pid, "-o", "etime="), stdout = TRUE, stderr = FALSE),
+      error = function(e) "—"
+    ), collapse = " "))
+    cpu <- trimws(paste(tryCatch(
+      system2("ps", c("-p", pid, "-o", "%cpu="), stdout = TRUE, stderr = FALSE),
+      error = function(e) "—"
+    ), collapse = " "))
+    mem <- trimws(paste(tryCatch(
+      system2("ps", c("-p", pid, "-o", "%mem="), stdout = TRUE, stderr = FALSE),
+      error = function(e) "—"
+    ), collapse = " "))
     return(list(
       running = TRUE,
       pid = as.integer(pid),
-      elapsed = trimws(parts[[1]] %||% "—"),
-      cpu = trimws(parts[[2]] %||% "—"),
-      mem = trimws(parts[[3]] %||% "—")
+      elapsed = if (nzchar(elapsed)) elapsed else "—",
+      cpu = if (nzchar(cpu)) cpu else "—",
+      mem = if (nzchar(mem)) mem else "—"
     ))
   }
 
