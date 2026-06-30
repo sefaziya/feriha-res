@@ -7,8 +7,9 @@ init_res()
 config <- load_config()
 run_date <- format(Sys.Date(), "%Y%m%d")
 
+options(res.run_id = NULL)
 get_res_run_id()
-init_engine_log(config)
+init_engine_log(config, run_date = run_date)
 on.exit(close_engine_log(), add = TRUE)
 
 log_start(config)

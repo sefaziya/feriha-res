@@ -14,6 +14,9 @@ checkpoint_path <- function(out_dir, field, step) {
 write_checkpoint <- function(field, step, out_dir, payload = list()) {
   path <- checkpoint_path(out_dir, field, step)
   saveRDS(c(list(field = field, step = step, time = Sys.time()), payload), path)
+  if (exists("notify_checkpoint", mode = "function")) {
+    notify_checkpoint(field, step, out_dir)
+  }
   invisible(path)
 }
 

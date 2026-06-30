@@ -108,8 +108,9 @@ run_monitor_app <- function(proj_root, monitor_cfg = NULL, config = NULL) {
           shiny::column(3, shiny::div(class = "metric-card", shiny::div(class = "metric-title", "Veri dosyalari"), shiny::uiOutput("data_count")))
         ),
         shiny::fluidRow(
-          shiny::column(6, shiny::div(class = "metric-card", shiny::div(class = "metric-title", "Aktif alan"), shiny::textOutput("current_field", inline = TRUE))),
-          shiny::column(6, shiny::div(class = "metric-card", shiny::div(class = "metric-title", "Aktif adim"), shiny::textOutput("current_step", inline = TRUE)))
+          shiny::column(4, shiny::div(class = "metric-card", shiny::div(class = "metric-title", "Aktif alan"), shiny::textOutput("current_field", inline = TRUE))),
+          shiny::column(4, shiny::div(class = "metric-card", shiny::div(class = "metric-title", "Aktif adim"), shiny::textOutput("current_step", inline = TRUE))),
+          shiny::column(4, shiny::div(class = "metric-card", shiny::div(class = "metric-title", "Process"), shiny::textOutput("process_info", inline = TRUE)))
         ),
         shiny::tabsetPanel(
           shiny::tabPanel(
@@ -177,7 +178,10 @@ run_monitor_app <- function(proj_root, monitor_cfg = NULL, config = NULL) {
       s <- status_data()
       cls <- if (s$engine_running) "on" else "off"
       lbl <- if (s$engine_running) "Calisiyor" else "Durdu"
-      shiny::tags$div(class = paste("metric-value", cls), lbl)
+      shiny::tagList(
+        shiny::tags$div(class = paste("metric-value", cls), lbl),
+        shiny::tags$div(style = "font-size:11px;color:#6c757d;", paste("Kaynak:", s$activity_source))
+      )
     })
 
     output$tmux_status <- shiny::renderUI({
@@ -205,12 +209,24 @@ run_monitor_app <- function(proj_root, monitor_cfg = NULL, config = NULL) {
       step <- status_data()$current_step
       PIPELINE_STEP_LABELS[[step]] %||% step
     })
+
+    output$process_info <- shiny::renderText({
+      s <- status_data()
+      if (!s$engine_running) return("—")
+      sprintf("PID %s | CPU %s%% | RAM %s%% | %s", s$engine_pid, s$engine_cpu, s$engine_mem, s$engine_elapsed)
+    })
+
     output$last_update <- shiny::renderText({
-      paste("Son guncelleme:", status_data()$timestamp)
+      s <- status_data()
+      extra <- if (nzchar(s$live_updated) && !identical(s$live_updated, "—")) {
+        paste("| live:", s$live_updated)
+      } else ""
+      paste("Son guncelleme:", s$timestamp, extra)
     })
 
     output$fields_table <- shiny::renderUI({
-      df <- fields_to_df(status_data()$fields)
+      fields <- status_data()$fields
+      df <- fields_to_df(fields)
       if (nrow(df) == 0) {
         return(shiny::p("Henuz alan verisi yok. Engine baslatildiginda manifest olusur."))
       }
@@ -218,7 +234,8 @@ run_monitor_app <- function(proj_root, monitor_cfg = NULL, config = NULL) {
       for (nm in names(df)) html <- paste0(html, "<th>", nm, "</th>")
       html <- paste0(html, "</tr></thead><tbody>")
       for (i in seq_len(nrow(df))) {
-        html <- paste0(html, "<tr>")
+        row_style <- if (isTRUE(fields[[i]]$is_active)) " style='background:#e7f1ff;'" else ""
+        html <- paste0(html, "<tr", row_style, ">")
         for (j in seq_len(ncol(df))) {
           val <- df[i, j]
           if (names(df)[j] == "Ilerleme") {
@@ -236,7 +253,8 @@ run_monitor_app <- function(proj_root, monitor_cfg = NULL, config = NULL) {
     })
 
     output$log_tail <- shiny::renderText({
-      paste(tail_aggregate_log(config, 100), collapse = "\n")
+      lines <- tail_live_log(config, monitor_cfg, 120)
+      if (length(lines) == 1) lines else paste(lines, collapse = "\n")
     })
 
     output$system_info <- shiny::renderText({
@@ -244,6 +262,8 @@ run_monitor_app <- function(proj_root, monitor_cfg = NULL, config = NULL) {
       paste(
         sprintf("Run ID: %s", s$run_id),
         sprintf("Run date: %s", s$run_date),
+        sprintf("Engine PID: %s", s$engine_pid),
+        sprintf("Durum kaynagi: %s", s$activity_source),
         sprintf("tmux oturumlari: %s", paste(s$tmux_sessions, collapse = ", ")),
         sprintf("Proje: %s", proj_root),
         sep = "\n"

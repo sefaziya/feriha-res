@@ -35,11 +35,85 @@ log_file_name <- function(prefix, run_id = NULL) {
 }
 
 open_log_file <- function(path, append = FALSE) {
-  con <- file(path, open = if (append) "at" else "wt")
+  con <- file(path, open = if (append) "at" else "wt", encoding = "UTF-8")
   if (!append) {
     writeLines(paste("=== Log started:", as.character(Sys.time()), "==="), con)
+    flush(con)
   }
   con
+}
+
+flush_log_connections <- function() {
+  for (nm in c("engine_con", "aggregate_con", "con")) {
+    con <- .res_log_state[[nm]]
+    if (!is.null(con) && isOpen(con)) flush(con)
+  }
+  invisible(NULL)
+}
+
+live_status_path <- function(config, run_date = NULL) {
+  if (is.null(run_date)) run_date <- .res_log_state$run_date %||% format(Sys.Date(), "%Y%m%d")
+  base <- config$output$base_dir %||% "05_Output"
+  file.path(project_root(), base, "_meta", run_date, "live_status.json")
+}
+
+update_live_status <- function(field = NULL, step = NULL, extra = list()) {
+  config <- .res_log_state$config
+  if (is.null(config)) return(invisible(NULL))
+  if (!requireNamespace("jsonlite", quietly = TRUE)) return(invisible(NULL))
+
+  run_date <- .res_log_state$run_date %||% format(Sys.Date(), "%Y%m%d")
+  if (!is.null(field) && nzchar(field)) .res_log_state$current_field <- field
+  if (!is.null(step) && nzchar(step)) .res_log_state$current_step <- step
+
+  status <- c(
+    list(
+      updated_at = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+      run_id = get_res_run_id(),
+      pid = Sys.getpid(),
+      current_field = .res_log_state$current_field %||% NA_character_,
+      current_step = .res_log_state$current_step %||% NA_character_,
+      engine_running = TRUE
+    ),
+    extra
+  )
+
+  path <- live_status_path(config, run_date)
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  tmp <- paste0(path, ".tmp")
+  jsonlite::write_json(status, tmp, pretty = TRUE, auto_unbox = TRUE, na = "null")
+  file.rename(tmp, path)
+  invisible(path)
+}
+
+notify_checkpoint <- function(field, step, out_dir) {
+  update_live_status(field = field, step = step)
+}
+
+mark_engine_stopped <- function(config, run_date = NULL) {
+  if (is.null(config)) config <- .res_log_state$config
+  if (is.null(config)) return(invisible(NULL))
+  if (!requireNamespace("jsonlite", quietly = TRUE)) return(invisible(NULL))
+  if (is.null(run_date)) run_date <- .res_log_state$run_date %||% format(Sys.Date(), "%Y%m%d")
+
+  path <- live_status_path(config, run_date)
+  prev <- if (file.exists(path)) {
+    tryCatch(jsonlite::read_json(path), error = function(e) list())
+  } else {
+    list()
+  }
+
+  status <- c(
+    prev,
+    list(
+      updated_at = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+      engine_running = FALSE,
+      pid = NA
+    )
+  )
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  jsonlite::write_json(status, path, pretty = TRUE, auto_unbox = TRUE, na = "null")
+  invisible(path)
 }
 
 write_aggregate_run_header <- function(con, run_id) {
@@ -64,6 +138,7 @@ write_aggregate_run_footer <- function(con, run_id) {
 
 write_log_lines <- function(msg) {
   cat(msg, "\n")
+  flush.console()
   if (!is.null(.res_log_state$engine_con)) {
     writeLines(msg, .res_log_state$engine_con)
   }
@@ -73,9 +148,16 @@ write_log_lines <- function(msg) {
   if (!is.null(.res_log_state$con)) {
     writeLines(msg, .res_log_state$con)
   }
+  flush_log_connections()
 }
 
-init_engine_log <- function(config) {
+init_engine_log <- function(config, run_date = NULL) {
+  if (is.null(run_date)) run_date <- format(Sys.Date(), "%Y%m%d")
+  .res_log_state$config <- config
+  .res_log_state$run_date <- run_date
+  .res_log_state$current_field <- NA_character_
+  .res_log_state$current_step <- NA_character_
+
   run_id <- get_res_run_id()
   base <- config$output$base_dir %||% "05_Output"
   log_dir <- file.path(project_root(), base, "_logs")
@@ -98,23 +180,30 @@ init_engine_log <- function(config) {
   if (!is.null(.res_log_state$aggregate_path)) {
     log_info("Aggregate log file: ", .res_log_state$aggregate_path)
   }
+  update_live_status(extra = list(event = "engine_start"))
   invisible(log_path)
 }
 
 close_engine_log <- function() {
   run_id <- get_res_run_id()
+  config <- .res_log_state$config
+  run_date <- .res_log_state$run_date
 
   if (!is.null(.res_log_state$engine_con)) {
     writeLines(paste("=== Log ended:", as.character(Sys.time()), "==="), .res_log_state$engine_con)
+    flush(.res_log_state$engine_con)
     close(.res_log_state$engine_con)
     .res_log_state$engine_con <- NULL
   }
 
   if (!is.null(.res_log_state$aggregate_con)) {
     write_aggregate_run_footer(.res_log_state$aggregate_con, run_id)
+    flush(.res_log_state$aggregate_con)
     close(.res_log_state$aggregate_con)
     .res_log_state$aggregate_con <- NULL
   }
+
+  mark_engine_stopped(config, run_date)
 }
 
 init_field_log <- function(field, config, out_dir) {
@@ -135,6 +224,7 @@ init_field_log <- function(field, config, out_dir) {
 close_field_log <- function() {
   if (!is.null(.res_log_state$con)) {
     writeLines(paste("=== Log ended:", as.character(Sys.time()), "==="), .res_log_state$con)
+    flush(.res_log_state$con)
     close(.res_log_state$con)
     .res_log_state$con <- NULL
   }
@@ -146,6 +236,15 @@ log_message <- function(level, ...) {
   stamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
   msg <- paste0("[", stamp, "][", toupper(level), "] ", paste(..., collapse = ""))
   write_log_lines(msg)
+
+  if (grepl("Log started for field:", msg, fixed = TRUE)) {
+    field <- trimws(sub(".*Log started for field: ", "", msg))
+    update_live_status(field = field)
+  } else if (grepl("Step:", msg, fixed = TRUE)) {
+    step <- trimws(sub(".*Step: ", "", msg))
+    update_live_status(step = step)
+  }
+
   invisible(msg)
 }
 
